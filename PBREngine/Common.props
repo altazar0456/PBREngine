@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros">
+    <DependenciesDir>$(SolutionDir)dependencies\</DependenciesDir>
+  </PropertyGroup>
+  <PropertyGroup />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(DependenciesDir)assimp-5.0.1\include;$(DependenciesDir)glfw-3.3.2\include;$(DependenciesDir)glm;$(DependenciesDir)stb;</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(DependenciesDir)assimp-5.0.1\lib;$(DependenciesDir)glfw-3.3.2\lib-vc2019;</AdditionalLibraryDirectories>
+      <AddModuleNamesToAssembly>
+      </AddModuleNamesToAssembly>
+      <AdditionalDependencies>assimp-vc142-mt.lib;IrrXML.lib;zlibstatic.lib;glfw3.lib;glfw3dll.lib;OpenGL32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <BuildMacro Include="DependenciesDir">
+      <Value>$(DependenciesDir)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>
