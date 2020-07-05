@@ -7,13 +7,13 @@
   <PropertyGroup />
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(DependenciesDir)assimp-5.0.1\include;$(DependenciesDir)glfw-3.3.2\include;$(DependenciesDir)glm;$(DependenciesDir)stb;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(DependenciesDir)assimp-5.0.1\include;$(DependenciesDir)glfw-3.3.2\include;$(DependenciesDir)glm;$(DependenciesDir)stb;$(VULKAN_SDK)\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(DependenciesDir)assimp-5.0.1\lib;$(DependenciesDir)glfw-3.3.2\lib-vc2019;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(DependenciesDir)assimp-5.0.1\lib;$(DependenciesDir)glfw-3.3.2\lib-vc2019;$(Vulkan_SDK)\Lib</AdditionalLibraryDirectories>
       <AddModuleNamesToAssembly>
       </AddModuleNamesToAssembly>
-      <AdditionalDependencies>assimp-vc142-mt.lib;IrrXML.lib;zlibstatic.lib;glfw3.lib;glfw3dll.lib;OpenGL32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>assimp-vc142-mt.lib;IrrXML.lib;zlibstatic.lib;glfw3.lib;glfw3dll.lib;OpenGL32.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
