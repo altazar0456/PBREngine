@@ -1,6 +1,7 @@
 #pragma once
 
-class GLFWwindow;
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
 
 class Application
 {
@@ -9,16 +10,17 @@ public:
     ~Application();
 
     void run();
+private:
 
     void initWindow();
-
     void initVulkan();
+    void createInstance();
 
     void mainLoop();
 
     void cleanup();
 
-private:
     GLFWwindow* m_window;
+    VkInstance instance;
 };
 
