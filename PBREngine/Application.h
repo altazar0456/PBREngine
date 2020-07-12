@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 
 #include <vector>
+#include <optional>
 
 class Application
 {
@@ -13,17 +14,36 @@ public:
 
     void run();
 private:
+    struct QueueFamilyIndices
+    {
+        std::optional<uint32_t> graphicsFamily;
+
+        bool isComplete();
+    };
 
     void initWindow();
     void initVulkan();
     void createInstance();
-    bool getRequaredExtensions(std::vector<const char*>& extensions);
+    void setupDebugMessenger();
+    void pickPhysicalDevice();
+    void createLogicalDevice();
+    bool getRequiredExtensions(std::vector<const char*>& extensions) const;
+
+    bool checkRequiredValidationLayers() const;
 
     void mainLoop();
 
     void cleanup();
 
+    void initDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) const;
+    int rateDeviceSuitability(VkPhysicalDevice device) const;
+    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) const;
+
     GLFWwindow* m_window;
-    VkInstance instance;
+    VkInstance m_instance;
+    VkDebugUtilsMessengerEXT m_debugMessenger;
+    VkPhysicalDevice m_physicalDevice;
+    VkDevice m_device;
+    VkQueue m_graphicsQueue;
 };
 
