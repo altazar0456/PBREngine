@@ -37,6 +37,7 @@ private:
     void pickPhysicalDevice();
     void createLogicalDevice();
     void createSwapChain();
+    void createImageViews();
     bool getRequiredExtensions(std::vector<const char*>& extensions) const;
 
     bool checkRequiredValidationLayers() const;
@@ -63,6 +64,7 @@ private:
     VkDevice m_device;
     VkSwapchainKHR m_swapChain;
     std::vector<VkImage> m_swapChainImages;
+    std::vector<VkImageView> m_swapChainImageViews;
     VkFormat m_swapChainImageFormat;
     VkExtent2D m_swapChainExtent;
     VkQueue m_graphicsQueue;
