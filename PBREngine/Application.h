@@ -6,6 +6,8 @@
 #include <vector>
 #include <optional>
 
+class Renderer;
+
 class Application
 {
 public:
@@ -38,9 +40,6 @@ private:
     void createLogicalDevice();
     void createSwapChain();
     void createImageViews();
-    void createRenderPass();
-    void createGraphicsPipeline();
-    VkShaderModule createShaderModule(const std::vector<char>& code);
     bool getRequiredExtensions(std::vector<const char*>& extensions) const;
 
     bool checkRequiredValidationLayers() const;
@@ -72,8 +71,6 @@ private:
     VkExtent2D m_swapChainExtent;
     VkQueue m_graphicsQueue;
     VkQueue m_presentQueue;
-    VkRenderPass m_renderPass;
-    VkPipelineLayout m_pipelineLayout;
-    VkPipeline m_graphicsPipeline;
+    Renderer* m_renderer;
 };
 
