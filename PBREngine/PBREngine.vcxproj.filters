@@ -31,6 +31,9 @@
     <ClInclude Include="Renderer.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="QueueFamilyIndices.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\source\shader.frag">

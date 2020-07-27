@@ -1,10 +1,11 @@
 #pragma once
 
+#include "QueueFamilyIndices.h"
+
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 #include <vector>
-#include <optional>
 
 class Renderer;
 
@@ -15,14 +16,7 @@ public:
     ~Application();
 
     void run();
-private:
-    struct QueueFamilyIndices
-    {
-        std::optional<uint32_t> graphicsFamily;
-        std::optional<uint32_t> presentFamily;
-
-        bool isComplete();
-    };
+private:    
 
     struct SwapChainSupportDetails
     {

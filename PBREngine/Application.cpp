@@ -97,7 +97,8 @@ void Application::initVulkan()
     createSwapChain();
     createImageViews();
 
-    m_renderer = new Renderer(m_device, m_swapChainImageFormat, m_swapChainExtent);
+    m_renderer = new Renderer(m_device, m_swapChain, m_swapChainImageViews, m_swapChainImageFormat, m_swapChainExtent,
+        findQueueFamilies(m_physicalDevice), m_graphicsQueue, m_presentQueue);
     m_renderer->init("Shaders/compiled/vert.spv", "Shaders/compiled/frag.spv");
 }
 
@@ -106,7 +107,10 @@ void Application::mainLoop()
     while(!glfwWindowShouldClose(m_window))
     {
         glfwPollEvents();
+        m_renderer->drawFrame();
     }
+
+    vkDeviceWaitIdle(m_device);
 }
 
 void Application::cleanup()
@@ -516,7 +520,7 @@ int Application::rateDeviceSuitability(VkPhysicalDevice device) const
     return score;
 }
 
-Application::QueueFamilyIndices Application::findQueueFamilies(VkPhysicalDevice device) const
+QueueFamilyIndices Application::findQueueFamilies(VkPhysicalDevice device) const
 {
     QueueFamilyIndices indices;
 
@@ -598,9 +602,4 @@ VkExtent2D Application::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabil
     actualExtend.height = std::clamp(actualExtend.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 
     return actualExtend;
-}
-
-bool Application::QueueFamilyIndices::isComplete()
-{
-    return graphicsFamily.has_value() && presentFamily.has_value();
 }

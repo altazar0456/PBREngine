@@ -171,6 +171,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
+    <ClInclude Include="QueueFamilyIndices.h" />
     <ClInclude Include="Renderer.h" />
   </ItemGroup>
   <ItemGroup>
