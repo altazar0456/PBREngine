@@ -11,7 +11,7 @@
 class Renderer
 {
 public:
-    Renderer(VkDevice device, VkSwapchainKHR swapChain, const std::vector<VkImageView>& swapChainImageViews, VkFormat swapChainImageFormat, 
+    Renderer(VkDevice device, VkSwapchainKHR swapChain, const std::vector<VkImage>& swapChainImages, const std::vector<VkImageView>& swapChainImageViews, VkFormat swapChainImageFormat,
         VkExtent2D swapChainExtent, const QueueFamilyIndices& queueFamilyIndices, VkQueue graphicsQueue, VkQueue presentQueue);
     ~Renderer();
 
@@ -28,11 +28,12 @@ private:
     void createFrameBuffers();
     void createCommandPool();
     void createCommandBuffers();
-    void createSemaphores();
+    void createSyncObjects();
 
     // Variables set outside
     VkDevice m_device;
     VkSwapchainKHR m_swapChain;
+    std::vector<VkImage> m_swapChainImages;
     std::vector<VkImageView> m_swapChainImageViews;
     VkFormat m_swapChainImageFormat;
     VkExtent2D m_swapChainExtent;
@@ -47,7 +48,11 @@ private:
     std::vector<VkFramebuffer> m_swapChainFrameBuffers;
     VkCommandPool m_commandPool;
     std::vector<VkCommandBuffer> m_commandBuffers;
-    VkSemaphore m_imageAvailableSemaphore;
-    VkSemaphore m_renderFinishedSemaphore;
+    std::vector<VkSemaphore> m_imageAvailableSemaphores;
+    std::vector<VkSemaphore> m_renderFinishedSemaphores;
+    std::vector<VkFence> m_inFlightFences;
+    std::vector<VkFence> m_imagesInFlight;
+
+    size_t m_currentFrame;
 };
 

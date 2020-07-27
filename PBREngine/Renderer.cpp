@@ -3,12 +3,14 @@
 #include <fstream>
 #include <stdexcept>
 
-Renderer::Renderer(VkDevice device, VkSwapchainKHR swapChain, const std::vector<VkImageView>& swapChainImageViews, VkFormat swapChainImageFormat, 
+const int kMaxFramesInFlight = 2;
+
+Renderer::Renderer(VkDevice device, VkSwapchainKHR swapChain, const std::vector<VkImage>& swapChainImages, const std::vector<VkImageView>& swapChainImageViews, VkFormat swapChainImageFormat,
     VkExtent2D swapChainExtent, const QueueFamilyIndices& queueFamilyIndices, VkQueue graphicsQueue, VkQueue presentQueue) :
-m_device(device), m_swapChain(swapChain), m_swapChainImageViews(swapChainImageViews), m_swapChainImageFormat(swapChainImageFormat),
+m_device(device), m_swapChain(swapChain), m_swapChainImages(swapChainImages), m_swapChainImageViews(swapChainImageViews), m_swapChainImageFormat(swapChainImageFormat),
 m_swapChainExtent(swapChainExtent), m_queueFamilyIndices(queueFamilyIndices), m_graphicsQueue(graphicsQueue), m_presentQueue(presentQueue),
 m_renderPass(VK_NULL_HANDLE), m_pipelineLayout(VK_NULL_HANDLE), m_graphicsPipeline(VK_NULL_HANDLE), m_commandPool(VK_NULL_HANDLE),
-m_imageAvailableSemaphore(VK_NULL_HANDLE), m_renderFinishedSemaphore(VK_NULL_HANDLE)
+m_currentFrame(0)
 {    
 }
 
@@ -23,15 +25,20 @@ void Renderer::init(const std::string& vertShaderFilename, const std::string& fr
     createFrameBuffers();
     createCommandPool();
     createCommandBuffers();
-    createSemaphores();
+    createSyncObjects();
 }
 
 void Renderer::shutdown()
 {
-    vkDestroySemaphore(m_device, m_imageAvailableSemaphore, nullptr);
-    m_imageAvailableSemaphore = VK_NULL_HANDLE;
-    vkDestroySemaphore(m_device, m_renderFinishedSemaphore, nullptr);
-    m_renderFinishedSemaphore = VK_NULL_HANDLE;
+    for(int i = 0; i < kMaxFramesInFlight; ++i)
+    {
+        vkDestroySemaphore(m_device, m_imageAvailableSemaphores[i], nullptr);
+        vkDestroySemaphore(m_device, m_renderFinishedSemaphores[i], nullptr);
+        vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
+    }
+    m_imageAvailableSemaphores.clear();
+    m_renderFinishedSemaphores.clear();
+    m_inFlightFences.clear();
 
     vkDestroyCommandPool(m_device, m_commandPool, nullptr);
     m_commandPool = VK_NULL_HANDLE;
@@ -52,26 +59,36 @@ void Renderer::shutdown()
 
 void Renderer::drawFrame()
 {
+    // Wait frame to be finished
+    vkWaitForFences(m_device, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
+
     // Acquire image from swap chain
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+    vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
+
+    // Check if a previous frame is using this image (i.e. there is its fence to wait on)
+    if(m_imagesInFlight[imageIndex] != VK_NULL_HANDLE)
+        vkWaitForFences(m_device, 1, &m_imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
+    // Mark the image as now being in use by this frame
+    m_imagesInFlight[imageIndex] = m_inFlightFences[m_currentFrame];
 
     // Submit draw command buffer
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphore };
+    VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame] };
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStages;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &m_commandBuffers[imageIndex];
-    VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphore };
+    VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphores[m_currentFrame] };
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    VkResult res = vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]);
+    VkResult res = vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFences[m_currentFrame]);
     if(res != VK_SUCCESS)
         throw std::runtime_error("Failed to submit draw command buffer");
 
@@ -89,7 +106,7 @@ void Renderer::drawFrame()
 
     vkQueuePresentKHR(m_presentQueue, &presentInfo);
 
-    vkQueueWaitIdle(m_presentQueue);
+    m_currentFrame = (m_currentFrame + 1) % kMaxFramesInFlight;
 }
 
 void Renderer::createRenderPass()
@@ -379,18 +396,36 @@ void Renderer::createCommandBuffers()
     }
 }
 
-void Renderer::createSemaphores()
+void Renderer::createSyncObjects()
 {
+    VkResult res;
+
+    m_imageAvailableSemaphores.resize(kMaxFramesInFlight);
+    m_renderFinishedSemaphores.resize(kMaxFramesInFlight);
+    m_inFlightFences.resize(kMaxFramesInFlight);
+    m_imagesInFlight.resize(m_swapChainImages.size(), VK_NULL_HANDLE);
+
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-    VkResult res = vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_imageAvailableSemaphore);
-    if(res != VK_SUCCESS)
-        throw std::runtime_error("Failed to create image available semaphore!");
+    VkFenceCreateInfo fenceInfo{};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    res = vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderFinishedSemaphore);
-    if(res != VK_SUCCESS)
-        throw std::runtime_error("Failed to create render finished semaphore!");
+    for(int i = 0; i < kMaxFramesInFlight; ++i)
+    {
+        res = vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]);
+        if(res != VK_SUCCESS)
+            throw std::runtime_error("Failed to create image available semaphore!");
+
+        res = vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]);
+        if(res != VK_SUCCESS)
+            throw std::runtime_error("Failed to create render finished semaphore!");
+
+        res = vkCreateFence(m_device, &fenceInfo, nullptr, &m_inFlightFences[i]);
+        if(res != VK_SUCCESS)
+            throw std::runtime_error("Failed to create fence!");
+    }
 }
 
 VkShaderModule Renderer::createShaderModule(const std::string& filename)

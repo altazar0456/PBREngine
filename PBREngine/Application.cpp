@@ -97,7 +97,7 @@ void Application::initVulkan()
     createSwapChain();
     createImageViews();
 
-    m_renderer = new Renderer(m_device, m_swapChain, m_swapChainImageViews, m_swapChainImageFormat, m_swapChainExtent,
+    m_renderer = new Renderer(m_device, m_swapChain, m_swapChainImages, m_swapChainImageViews, m_swapChainImageFormat, m_swapChainExtent,
         findQueueFamilies(m_physicalDevice), m_graphicsQueue, m_presentQueue);
     m_renderer->init("Shaders/compiled/vert.spv", "Shaders/compiled/frag.spv");
 }
